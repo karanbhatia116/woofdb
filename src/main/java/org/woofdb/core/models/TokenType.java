@@ -7,5 +7,7 @@ public enum TokenType {
     LITERAL, // String or numeric values
     COMMA, // ,
     SEMICOLON, // ;
-    WHITESPACE; // spaces, tabs, new lines
+    WHITESPACE, // spaces, tabs, new lines
+    COMMENT, // --
+    ;
 }

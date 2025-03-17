@@ -67,10 +67,20 @@ public class SqlTokenizer implements Tokenizer {
                 continue;
             }
 
+            // check for *
             if (currentChar == '*') {
                 tokens.add(new Token(TokenType.IDENTIFIER, Character.toString(currentChar)));
                 position++;
                 continue;
+            }
+
+            // check for comments
+            if (currentChar == '-') {
+                int nextPosition = position + 1;
+                if (nextPosition < sql.length() && sql.charAt(nextPosition) == '-') {
+                    tokens.add(new Token(TokenType.COMMENT, sql.substring(position)));
+                }
+                return tokens;
             }
 
             // check for string literals
