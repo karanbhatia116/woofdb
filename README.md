@@ -5,7 +5,7 @@
 
 ## Pending items:
 
-- [ ] Implement SQL tokenizer
+- [X] Implement SQL tokenizer
 - [ ] Remove hardcoded users table
 - [ ] Implement Parser
 - [ ] Move table persistence to a Page based technique to store and retrieve data instead of loading everything in memory
