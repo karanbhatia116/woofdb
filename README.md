@@ -8,6 +8,8 @@
 - [X] Implement SQL tokenizer
 - [X] Implement SQL parser
 - [X] Remove hardcoded users table
+- [ ] Add support for filtering data
+- [ ] Add TCP interface to interact with the database
 - [ ] Move table persistence to a Page based technique to store and retrieve data instead of loading everything in memory
 - [ ] Implement B-Trees for table persistence
 - [ ] Implement logic for indexes
