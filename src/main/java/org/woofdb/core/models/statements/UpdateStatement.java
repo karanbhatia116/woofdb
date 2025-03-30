@@ -5,7 +5,7 @@ import org.woofdb.core.models.expression.Expression;
 
 import java.util.Map;
 
-public class UpdateStatement extends Statement {
+public final class UpdateStatement extends Statement {
 
     public UpdateStatement() {
         super(StatementType.STATEMENT_UPDATE);

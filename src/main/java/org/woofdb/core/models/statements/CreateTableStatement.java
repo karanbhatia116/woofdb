@@ -5,7 +5,7 @@ import org.woofdb.core.models.ResourceType;
 
 import java.util.List;
 
-public class CreateTableStatement extends CreateStatement {
+public final class CreateTableStatement extends CreateStatement {
 
     public CreateTableStatement() {
         super(ResourceType.TABLE);

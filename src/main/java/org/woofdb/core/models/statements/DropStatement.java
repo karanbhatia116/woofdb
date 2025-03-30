@@ -4,7 +4,7 @@ package org.woofdb.core.models.statements;
 import org.woofdb.core.models.ResourceType;
 import org.woofdb.core.models.StatementType;
 
-public class DropStatement extends Statement {
+public final class DropStatement extends Statement {
     private ResourceType resourceType;
     private String resourceName;
 

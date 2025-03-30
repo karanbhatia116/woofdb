@@ -4,7 +4,7 @@ import org.woofdb.core.models.StatementType;
 
 import java.util.List;
 
-public class InsertStatement extends Statement {
+public final class InsertStatement extends Statement {
     private String table;
     private List<String> values;
     private List<String> columns;

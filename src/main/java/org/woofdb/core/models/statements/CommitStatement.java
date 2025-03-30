@@ -2,8 +2,8 @@ package org.woofdb.core.models.statements;
 
 import org.woofdb.core.models.StatementType;
 
-public class CommitStatement extends Statement {
-    public CommitStatement(final StatementType statementType) {
-        super(statementType);
+public final class CommitStatement extends Statement {
+    public CommitStatement() {
+        super(StatementType.STATEMENT_COMMIT);
     }
 }

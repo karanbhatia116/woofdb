@@ -2,7 +2,9 @@ package org.woofdb.core.models.statements;
 
 import org.woofdb.core.models.StatementType;
 
-public abstract class Statement {
+sealed public abstract class Statement
+        permits CommitStatement, CreateStatement, DropStatement,
+        InsertStatement, RollbackStatement, SelectStatement, StartTransactionStatement, UpdateStatement {
     private StatementType statementType;
 
     public Statement(final StatementType statementType) {

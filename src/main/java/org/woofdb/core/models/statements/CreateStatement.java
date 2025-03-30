@@ -4,7 +4,7 @@ package org.woofdb.core.models.statements;
 import org.woofdb.core.models.ResourceType;
 import org.woofdb.core.models.StatementType;
 
-public class CreateStatement extends Statement {
+public sealed class CreateStatement extends Statement permits CreateDatabaseStatement, CreateTableStatement {
     private ResourceType resourceType;
 
     public ResourceType getResourceType() {

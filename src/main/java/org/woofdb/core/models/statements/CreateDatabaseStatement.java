@@ -2,7 +2,7 @@ package org.woofdb.core.models.statements;
 
 import org.woofdb.core.models.ResourceType;
 
-public class CreateDatabaseStatement extends CreateStatement {
+public final class CreateDatabaseStatement extends CreateStatement {
 
     public CreateDatabaseStatement() {
         super(ResourceType.DATABASE);

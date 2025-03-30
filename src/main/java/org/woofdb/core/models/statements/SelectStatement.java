@@ -5,7 +5,7 @@ import org.woofdb.core.models.expression.BinaryExpression;
 
 import java.util.List;
 
-public class SelectStatement extends Statement {
+public final class SelectStatement extends Statement {
 
     private List<String> columns;
     private String from;
