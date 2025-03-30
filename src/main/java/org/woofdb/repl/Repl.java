@@ -95,9 +95,9 @@ public final class Repl {
     }
 
     private static void clearTerminal() {
-        for (int i = 0; i < 50; i++) {
-            System.out.println();
-        }
+        // ANSI escape code to clear screen and position cursor at top-left
+        System.out.print("\033[H\033[2J");
+        System.out.flush();
     }
 
     private ExecutionResult executeStatement(final Statement statement) throws IOException, MaxTableSizeReachedException {
