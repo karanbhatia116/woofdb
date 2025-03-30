@@ -10,6 +10,8 @@ import java.util.List;
 public final class SqlTokenizer implements Tokenizer {
 
     public static List<String> SUPPORTED_KEYWORDS = List.of(
+            "SHOW",
+            "DESCRIBE",
             "USE",
             "SELECT",
             "FROM",
@@ -29,6 +31,8 @@ public final class SqlTokenizer implements Tokenizer {
             "EXPLAIN",
             "PRIMARY",
             "DATABASE",
+            "DATABASES",
+            "TABLES",
             "DROP",
             "INDEX"
     );

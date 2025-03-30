@@ -44,6 +44,9 @@ public final class SQLParser {
             else if (firstToken.getValue().equalsIgnoreCase("USE")) {
                 return parseUse(tokens, position);
             }
+            else if (firstToken.getValue().equalsIgnoreCase("SHOW")) {
+                return parseShowStatement(tokens, position);
+            }
             else  {
                 throw new SyntaxError("Illegal token " + firstToken.getValue() + " at position 0");
             }
@@ -222,6 +225,20 @@ public final class SQLParser {
         UseDatabaseStatement statement = new UseDatabaseStatement();
         statement.setDatabaseName(databaseName);
         return statement;
+    }
+
+    private static ShowStatement parseShowStatement(List<Token> tokens, int position) {
+        expect("SHOW", tokens, position);
+        position ++;
+        String resourceType = getToken(tokens, position).getValue();
+        position ++;
+        if (resourceType.endsWith("s") || resourceType.endsWith("S")) {
+            resourceType = resourceType.substring(0, resourceType.length() - 1);
+        }
+        ResourceType rType = ResourceType.from(resourceType);
+        ShowStatement showStatement = new ShowStatement();
+        showStatement.setResourceType(rType);
+        return showStatement;
     }
 
     private static BinaryExpression parseWhere(List<Token> tokens, int position) {

@@ -114,15 +114,18 @@ public class Table {
     }
 
     public void printTableData() {
+        System.out.println("------------------");
         for (Column column: columns) {
             System.out.print(column.getName() + " | ");
         }
         System.out.println();
+        System.out.println("------------------");
         for (Row row: rows) {
             for (Object value: row.getValues()) {
                 System.out.print(value + " | ");
             }
             System.out.println();
+            System.out.println("------------------");
         }
     }
 

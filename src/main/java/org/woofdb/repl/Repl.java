@@ -9,7 +9,12 @@ import org.woofdb.core.tokenizer.SqlTokenizer;
 import org.woofdb.core.tokenizer.Tokenizer;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class Repl {
 
@@ -106,7 +111,7 @@ public final class Repl {
                 String tableName = insertStatement.getTable();
                 Table table = currentDatabase.getTable(tableName);
                 if (table == null) {
-                    return noSuchTableResult(tableName);
+                    return noSuchResourceResult(tableName, ResourceType.TABLE);
                 }
                 Object[] args = insertStatement.getValues().toArray();
                 try {
@@ -124,13 +129,16 @@ public final class Repl {
                 String tableName = selectStatement.getFrom();
                 Table table = currentDatabase.getTable(tableName);
                 if (table == null) {
-                    return noSuchTableResult(tableName);
+                    return noSuchResourceResult(tableName, ResourceType.TABLE);
                 }
                 table.printTableData();
             }
             case STATEMENT_USE -> {
                 UseDatabaseStatement useDatabaseStatement = (UseDatabaseStatement) statement;
                 String databaseName = useDatabaseStatement.getDatabaseName();
+                if (!Files.exists(Path.of(getBaseDatabaseDirectoryPath() + databaseName))) {
+                    return noSuchResourceResult(databaseName, ResourceType.DATABASE);
+                }
                 currentDatabase = new Database(getBaseDatabaseDirectoryPath() + databaseName);
             }
             case STATEMENT_CREATE -> {
@@ -145,10 +153,45 @@ public final class Repl {
                     currentDatabase.createTable(createTableStatement.getTableName(), createTableStatement.getColumns());
                 }
             }
+            case STATEMENT_SHOW -> {
+                ShowStatement showStatement = (ShowStatement) statement;
+                if (showStatement.getResourceType() == ResourceType.DATABASE) {
+                    Set<String> dbNames;
+                    if (!Files.exists(Path.of("./db"))) {
+                        dbNames = Collections.emptySet();
+                    }
+                    else {
+                        dbNames = Files.list(Path.of("./db/"))
+                                .map(it -> it.getFileName().toString())
+                                .collect(Collectors.toSet());
+                    }
+                    printShowResourcesResult("      Database    ", showStatement.getResourceType(), dbNames);
+                }
+                else if (showStatement.getResourceType() == ResourceType.TABLE) {
+                    if (currentDatabase == null) {
+                        return noDbSelectedResult();
+                    }
+
+                    Set<String> tables = Files.list(Path.of(currentDatabase.getBaseDirectory())).map(it -> it.getFileName().toString().replace(".tbl", "")).collect(Collectors.toSet());
+                    printShowResourcesResult("      Tables    ", showStatement.getResourceType(), tables);
+                }
+            }
         }
         long end = System.currentTimeMillis();
         System.out.println("\nExecuted in " + (end - start) + " ms.");
         return ExecutionResult.EXECUTE_SUCCESS;
+    }
+
+    private static void printShowResourcesResult(final String resourceName, final ResourceType resourceType, final Set<String> resourceNames) {
+        if (resourceNames.isEmpty()) {
+            System.out.println("No available " + resourceType + ".");
+            return;
+        }
+        System.out.println("------------------");
+        System.out.println(resourceName);
+        System.out.println("------------------");
+        resourceNames.forEach(System.out::println);
+        System.out.println("-------------------");
     }
 
     private static String getBaseDatabaseDirectoryPath() {
@@ -160,8 +203,8 @@ public final class Repl {
         return ExecutionResult.EXECUTE_FAILURE;
     }
 
-    private static ExecutionResult noSuchTableResult(String tableName) {
-        System.out.println("Unknown table '" + tableName + "'");
+    private static ExecutionResult noSuchResourceResult(String resourceName, ResourceType resourceType) {
+        System.out.println("Unknown " + resourceType + " '" + resourceName + "'");
         return ExecutionResult.EXECUTE_FAILURE;
     }
 }
