@@ -1,6 +1,6 @@
 # WoofDB
 
-* WoofDB is an embedded, SQL based (not quite yet) database inspired by SQLite and DuckDB.
+* WoofDB is an embedded, almost SQL based (not quite yet) database inspired by SQLite and DuckDB.
 * It provides REPL interface to connect and interact with the database (Soon to move to expose over TCP)
 
 ## Pending items:
