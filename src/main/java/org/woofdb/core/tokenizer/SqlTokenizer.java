@@ -26,7 +26,10 @@ public class SqlTokenizer implements Tokenizer {
             "SET",
             "UPDATE",
             "EXPLAIN",
-            "PRIMARY"
+            "PRIMARY",
+            "DATABASE",
+            "DROP",
+            "INDEX"
     );
 
     public static boolean isKeyword(String word) {
@@ -125,6 +128,11 @@ public class SqlTokenizer implements Tokenizer {
             if (currentChar == ';') {
                 tokens.add(new Token(TokenType.SEMICOLON, Character.toString(currentChar)));
                 position++;
+                continue;
+            }
+
+            if (currentChar == '(' || currentChar == ')') {
+                position ++;
                 continue;
             }
 

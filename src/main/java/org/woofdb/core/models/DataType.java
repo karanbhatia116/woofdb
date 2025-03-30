@@ -32,4 +32,8 @@ public enum DataType {
     public Integer getLength() {
         return length;
     }
+
+    public static DataType from(String value) {
+        return DataType.valueOf(value.toUpperCase());
+    }
 }

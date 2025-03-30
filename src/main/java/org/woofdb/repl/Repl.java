@@ -1,7 +1,12 @@
 package org.woofdb.repl;
 import org.woofdb.core.exceptions.MaxTableSizeReachedException;
+import org.woofdb.core.exceptions.SyntaxError;
 import org.woofdb.core.models.*;
 import org.woofdb.core.models.MetaCommand;
+import org.woofdb.core.models.statements.InsertStatement;
+import org.woofdb.core.models.statements.Statement;
+import org.woofdb.core.parser.SQLParser;
+import org.woofdb.core.tokenizer.SqlTokenizer;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -13,6 +18,8 @@ public final class Repl {
     public static void loop() {
         Scanner scanner = new Scanner(System.in);
         Database database = new Database("./woofdb");
+        SqlTokenizer sqlTokenizer = new SqlTokenizer();
+        SQLParser sqlParser = new SQLParser(sqlTokenizer);
         List<Column> columns = List.of(new Column("id", DataType.INT, false),
                 new Column("username", DataType.VARCHAR, true),
                 new Column("email", DataType.VARCHAR, false)
@@ -46,24 +53,18 @@ public final class Repl {
                 }
             }
             else {
-                final Statement statement = new Statement();
-                final PrepareStatementResult prepareStatementResult = prepareStatement(command, statement);
-                if (prepareStatementResult == PrepareStatementResult.PREPARE_UNRECOGNIZED_STATEMENT) {
-                    System.out.println("Unrecognized keyword at start of " + command);
-                }
-                else if (prepareStatementResult == PrepareStatementResult.PREPARE_SYNTAX_ERROR) {
-                    System.out.println("Syntax error. Could not parse statement " + command);
-                }
-                else {
-                    try {
-                        switch (executeStatement(table, statement)) {
-                            case EXECUTE_TABLE_FULL -> System.out.println("ERROR. Table Full!");
-                            case EXECUTE_FAILURE -> System.out.println("Failure while executing statement " + command);
-                        }
+                try {
+                    final Statement statement = sqlParser.parse(command);
+                    switch (executeStatement(table, statement)) {
+                        case EXECUTE_TABLE_FULL -> System.out.println("ERROR. Table Full!");
+                        case EXECUTE_FAILURE -> System.out.println("Failure while executing statement " + command);
                     }
-                    catch (IOException e) {
-                        System.out.println("IOException: " + Arrays.toString(e.getStackTrace()));
-                    }
+                }
+                catch (SyntaxError e) {
+                    System.out.println("SyntaxError: " + e.getMessage());
+                }
+                catch (IOException e) {
+                    System.out.println("IOException: " + e.getMessage());
                 }
             }
         }
@@ -104,37 +105,12 @@ public final class Repl {
         }
     }
 
-    private static PrepareStatementResult prepareStatement(final String command, Statement statement) {
-        if (command.toLowerCase().startsWith("insert")) {
-            statement.setStatementType(StatementType.STATEMENT_INSERT);
-            try {
-                String[] parts = command.split(" ");
-                if (parts.length < 3) {
-                    return PrepareStatementResult.PREPARE_SYNTAX_ERROR;
-                }
-                int id = Integer.parseInt(parts[1]);
-                String username = parts[2];
-                String email = parts[3];
-                statement.setArgs(id, username, email);
-            }
-            catch (Exception e) {
-                System.out.println("Exception occurred " + e);
-                return PrepareStatementResult.PREPARE_SYNTAX_ERROR;
-            }
-            return PrepareStatementResult.PREPARE_SUCCESS;
-        }
-        else if (command.toLowerCase().startsWith("select")) {
-            statement.setStatementType(StatementType.STATEMENT_SELECT);
-            return PrepareStatementResult.PREPARE_SUCCESS;
-        }
-        return PrepareStatementResult.PREPARE_UNRECOGNIZED_STATEMENT;
-    }
-
     private static ExecutionResult executeStatement(final Table table, final Statement statement) throws IOException {
         long start = System.currentTimeMillis();
         switch (statement.getStatementType()) {
             case STATEMENT_INSERT -> {
-                Object[] args = statement.getArgs();
+                InsertStatement insertStatement = (InsertStatement) statement;
+                Object[] args = insertStatement.getValues().toArray();
                 try {
                     table.addRow(args);
                 }

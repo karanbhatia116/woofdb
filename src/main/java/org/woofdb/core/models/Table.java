@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Table {
-    private static final int MAX_ROWS = 3;
+    private static final int MAX_ROWS = 100;
     private int numOfRows;
     private String tableName;
     private List<Column> columns;
@@ -101,7 +101,14 @@ public class Table {
         Row row = new Row(columns.size());
         int index = 0;
         for (Object value: values) {
-            row.setValue(index++, value);
+            Column column = this.getColumns().get(index);
+            DataType dataType = column.getDataType();
+            switch (dataType) {
+                case INT -> row.setValue(index++, Integer.parseInt((String) value));
+                case DOUBLE -> row.setValue(index++, Double.parseDouble((String) value));
+                case VARCHAR -> row.setValue(index++, (String) value);
+                case FLOAT -> row.setValue(index++, Float.parseFloat((String) value));
+            }
         }
         addRow(row);
     }
