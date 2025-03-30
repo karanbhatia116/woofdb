@@ -30,6 +30,13 @@ jar {
     manifest {
         attributes 'Main-Class': application.mainClass
     }
+
+    from {
+        configurations.runtimeClassPath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 test {
