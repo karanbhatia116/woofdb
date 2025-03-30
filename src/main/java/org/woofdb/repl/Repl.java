@@ -3,34 +3,22 @@ import org.woofdb.core.exceptions.MaxTableSizeReachedException;
 import org.woofdb.core.exceptions.SyntaxError;
 import org.woofdb.core.models.*;
 import org.woofdb.core.models.MetaCommand;
-import org.woofdb.core.models.statements.InsertStatement;
-import org.woofdb.core.models.statements.Statement;
+import org.woofdb.core.models.statements.*;
 import org.woofdb.core.parser.SQLParser;
 import org.woofdb.core.tokenizer.SqlTokenizer;
+import org.woofdb.core.tokenizer.Tokenizer;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Scanner;
 
 public final class Repl {
 
-    public static void loop() {
+    private Database currentDatabase = null;
+
+    public void loop() {
         Scanner scanner = new Scanner(System.in);
-        Database database = new Database("./woofdb");
-        SqlTokenizer sqlTokenizer = new SqlTokenizer();
+        Tokenizer sqlTokenizer = new SqlTokenizer();
         SQLParser sqlParser = new SQLParser(sqlTokenizer);
-        List<Column> columns = List.of(new Column("id", DataType.INT, false),
-                new Column("username", DataType.VARCHAR, true),
-                new Column("email", DataType.VARCHAR, false)
-        );
-        Table table;
-        try {
-            table = database.createTable("users", columns);
-        } catch (IOException e) {
-            System.out.println("Failed to create table users due to exception " + e);
-            return;
-        }
         while (true) {
             printPrompt();
             String command = scanner.nextLine();
@@ -55,7 +43,7 @@ public final class Repl {
             else {
                 try {
                     final Statement statement = sqlParser.parse(command);
-                    switch (executeStatement(table, statement)) {
+                    switch (executeStatement(statement)) {
                         case EXECUTE_TABLE_FULL -> System.out.println("ERROR. Table Full!");
                         case EXECUTE_FAILURE -> System.out.println("Failure while executing statement " + command);
                     }
@@ -65,6 +53,8 @@ public final class Repl {
                 }
                 catch (IOException e) {
                     System.out.println("IOException: " + e.getMessage());
+                } catch (MaxTableSizeReachedException e) {
+                    throw new RuntimeException(e);
                 }
             }
         }
@@ -105,11 +95,19 @@ public final class Repl {
         }
     }
 
-    private static ExecutionResult executeStatement(final Table table, final Statement statement) throws IOException {
+    private ExecutionResult executeStatement(final Statement statement) throws IOException, MaxTableSizeReachedException {
         long start = System.currentTimeMillis();
         switch (statement.getStatementType()) {
             case STATEMENT_INSERT -> {
+                if (currentDatabase == null) {
+                    return noDbSelectedResult();
+                }
                 InsertStatement insertStatement = (InsertStatement) statement;
+                String tableName = insertStatement.getTable();
+                Table table = currentDatabase.getTable(tableName);
+                if (table == null) {
+                    return noSuchTableResult(tableName);
+                }
                 Object[] args = insertStatement.getValues().toArray();
                 try {
                     table.addRow(args);
@@ -119,11 +117,51 @@ public final class Repl {
                 }
             }
             case STATEMENT_SELECT -> {
+                if (currentDatabase == null) {
+                    return noDbSelectedResult();
+                }
+                SelectStatement selectStatement = (SelectStatement) statement;
+                String tableName = selectStatement.getFrom();
+                Table table = currentDatabase.getTable(tableName);
+                if (table == null) {
+                    return noSuchTableResult(tableName);
+                }
                 table.printTableData();
+            }
+            case STATEMENT_USE -> {
+                UseDatabaseStatement useDatabaseStatement = (UseDatabaseStatement) statement;
+                String databaseName = useDatabaseStatement.getDatabaseName();
+                currentDatabase = new Database(getBaseDatabaseDirectoryPath() + databaseName);
+            }
+            case STATEMENT_CREATE -> {
+                if (statement instanceof CreateDatabaseStatement createDatabaseStatement) {
+                    Database database = new Database(getBaseDatabaseDirectoryPath() + createDatabaseStatement.getDatabaseName());
+                    database.loadTables();
+                }
+                else if (statement instanceof CreateTableStatement createTableStatement) {
+                    if (currentDatabase == null) {
+                        return noDbSelectedResult();
+                    }
+                    currentDatabase.createTable(createTableStatement.getTableName(), createTableStatement.getColumns());
+                }
             }
         }
         long end = System.currentTimeMillis();
         System.out.println("\nExecuted in " + (end - start) + " ms.");
         return ExecutionResult.EXECUTE_SUCCESS;
+    }
+
+    private static String getBaseDatabaseDirectoryPath() {
+        return "./db/";
+    }
+
+    private static ExecutionResult noDbSelectedResult() {
+        System.out.println("No database selected.");
+        return ExecutionResult.EXECUTE_FAILURE;
+    }
+
+    private static ExecutionResult noSuchTableResult(String tableName) {
+        System.out.println("Unknown table '" + tableName + "'");
+        return ExecutionResult.EXECUTE_FAILURE;
     }
 }

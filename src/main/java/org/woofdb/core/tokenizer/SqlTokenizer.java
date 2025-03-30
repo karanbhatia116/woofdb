@@ -7,9 +7,10 @@ import org.woofdb.core.models.TokenType;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SqlTokenizer implements Tokenizer {
+public final class SqlTokenizer implements Tokenizer {
 
     public static List<String> SUPPORTED_KEYWORDS = List.of(
+            "USE",
             "SELECT",
             "FROM",
             "WHERE",

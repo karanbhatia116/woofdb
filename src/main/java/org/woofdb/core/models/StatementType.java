@@ -1,6 +1,7 @@
 package org.woofdb.core.models;
 
 public enum StatementType {
+    STATEMENT_USE,
     STATEMENT_INSERT,
     STATEMENT_SELECT,
     STATEMENT_CREATE,

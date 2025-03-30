@@ -26,7 +26,7 @@ public class Database {
             }
         }
         else {
-            file.mkdir();
+            file.mkdirs();
         }
     }
 

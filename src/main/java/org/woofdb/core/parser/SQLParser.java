@@ -12,7 +12,7 @@ import java.util.*;
 
 import static org.woofdb.core.models.TokenType.*;
 
-public class SQLParser {
+public final class SQLParser {
     private final Tokenizer tokenizer;
 
     public SQLParser(final Tokenizer tokenizer) {
@@ -41,6 +41,9 @@ public class SQLParser {
             else if (firstToken.getValue().equalsIgnoreCase("UPDATE")) {
                 return parseUpdate(tokens, position);
             }
+            else if (firstToken.getValue().equalsIgnoreCase("USE")) {
+                return parseUse(tokens, position);
+            }
             else  {
                 throw new SyntaxError("Illegal token " + firstToken.getValue() + " at position 0");
             }
@@ -59,22 +62,22 @@ public class SQLParser {
         position ++;
         expect("FROM", tokens, position);
         position ++;
-        statement.setFrom(tokens.get(position).getValue());
+        statement.setFrom(getToken(tokens, position).getValue());
         position ++;
 
         // parse where clause
         if (position < tokens.size()) {
-            if (tokens.get(position).getTokenType() == KEYWORD) {
-                if (tokens.get(position).getValue().equalsIgnoreCase("WHERE") ) {
+            if (getToken(tokens, position).getTokenType() == KEYWORD) {
+                if (getToken(tokens, position).getValue().equalsIgnoreCase("WHERE") ) {
                     statement.setWhere(parseWhere(tokens, position));
                 }
                 else {
-                    throw new SyntaxError("Syntax error: Unexpected keyword " + tokens.get(position).getValue() + " at position " + position + " after table name");
+                    throw new SyntaxError("Syntax error: Unexpected keyword " + getToken(tokens, position).getValue() + " at position " + position + " after table name");
                 }
             }
-            else if (tokens.get(position).getTokenType() != SEMICOLON) {
+            else if (getToken(tokens, position).getTokenType() != SEMICOLON) {
                 throw new SyntaxError("Syntax error: Unexpected token at position " + position + " " +
-                tokens.get(position).getTokenType() + " '" + tokens.get(position).getValue() + "'");
+                getToken(tokens, position).getTokenType() + " '" + getToken(tokens, position).getValue() + "'");
             }
         }
 
@@ -87,7 +90,7 @@ public class SQLParser {
         position ++;
         expect("INTO", tokens, position);
         position ++;
-        final String tableName = tokens.get(position).getValue();
+        final String tableName = getToken(tokens, position).getValue();
         statement.setTable(tableName);
         position++;
         List<String> columns = getExpandedValues(tokens, position);
@@ -103,37 +106,44 @@ public class SQLParser {
         return statement;
     }
 
+    private static Token getToken(final List<Token> tokens, final int position) {
+        if (position >= tokens.size()) {
+            throw new SyntaxError("Syntax error at the end of " + position + " token");
+        }
+        return tokens.get(position);
+    }
+
     private static CreateStatement parseCreate(List<Token> tokens, int position) {
         expect("CREATE", tokens, position);
         position ++;
-        ResourceType resourceType = ResourceType.from(tokens.get(position).getValue());
+        ResourceType resourceType = ResourceType.from(getToken(tokens, position).getValue());
         position ++;
         switch (resourceType) {
             case DATABASE -> {
                 CreateDatabaseStatement createStatement = new CreateDatabaseStatement();
-                String databaseName = tokens.get(position).getValue();
+                String databaseName = getToken(tokens, position).getValue();
                 createStatement.setDatabaseName(databaseName);
                 return createStatement;
             }
             case TABLE -> {
                 CreateTableStatement createStatement = new CreateTableStatement();
-                String tableName = tokens.get(position).getValue();
+                String tableName = getToken(tokens, position).getValue();
                 createStatement.setTableName(tableName);
                 position ++;
                 List<Column> columns = new ArrayList<>();
                 do {
-                    if (position < tokens.size() && tokens.get(position).getTokenType() == TokenType.COMMA) {
+                    if (position < tokens.size() && getToken(tokens, position).getTokenType() == TokenType.COMMA) {
                         position++;
                         continue;
                     }
-                    else if (position < tokens.size() && tokens.get(position).getTokenType() == SEMICOLON) {
+                    else if (position < tokens.size() && getToken(tokens, position).getTokenType() == SEMICOLON) {
                         break;
                     }
-                    String columnName = tokens.get(position).getValue();
+                    String columnName = getToken(tokens, position).getValue();
                     Column column = new Column();
                     column.setName(columnName);
                     position ++;
-                    column.setDataType(DataType.from(tokens.get(position).getValue()));
+                    column.setDataType(DataType.from(getToken(tokens, position).getValue()));
                     position ++;
                     // TODO: remove this default and handle correctly
                     column.setNullable(true);
@@ -150,10 +160,10 @@ public class SQLParser {
         DropStatement statement = new DropStatement();
         expect("DROP", tokens, position);
         position ++;
-        ResourceType resourceType = ResourceType.from(tokens.get(position).getValue());
+        ResourceType resourceType = ResourceType.from(getToken(tokens, position).getValue());
         statement.setResourceType(resourceType);
         position ++;
-        String resourceName = tokens.get(position).getValue();
+        String resourceName = getToken(tokens, position).getValue();
         position++;
         statement.setResourceName(resourceName);
         return statement;
@@ -163,22 +173,22 @@ public class SQLParser {
         UpdateStatement statement = new UpdateStatement();
         expect("UPDATE", tokens, position);
         position ++;
-        String tableName = tokens.get(position).getValue();
+        String tableName = getToken(tokens, position).getValue();
         statement.setTableName(tableName);
         position ++;
         expect("SET", tokens, position);
         position ++;
         Map<String, String> updates = new HashMap<>();
         do {
-            String columnName = tokens.get(position).getValue();
+            String columnName = getToken(tokens, position).getValue();
             position += 2; // skip '='
             if (position  >= tokens.size()) {
                 throw new SyntaxError("Expected literal value but encountered end of statement at position " + position);
             }
-            String literal = tokens.get(position).getValue();
+            String literal = getToken(tokens, position).getValue();
             position ++;
             updates.put(columnName, literal);
-            if (position < tokens.size() && tokens.get(position).getTokenType() == COMMA) {
+            if (position < tokens.size() && getToken(tokens, position).getTokenType() == COMMA) {
                 position ++;
             } else {
                 break;
@@ -188,19 +198,29 @@ public class SQLParser {
         statement.setUpdates(updates);
         // parse where clause
         if (position < tokens.size()) {
-            if (tokens.get(position).getTokenType() == KEYWORD) {
-                if (tokens.get(position).getValue().equalsIgnoreCase("WHERE") ) {
+            if (getToken(tokens, position).getTokenType() == KEYWORD) {
+                if (getToken(tokens, position).getValue().equalsIgnoreCase("WHERE") ) {
                     statement.setCondition(parseWhere(tokens, position));
                 }
                 else {
-                    throw new SyntaxError("Syntax error: Unexpected keyword " + tokens.get(position).getValue() + " at position " + position + " after table name");
+                    throw new SyntaxError("Syntax error: Unexpected keyword " + getToken(tokens, position).getValue() + " at position " + position + " after table name");
                 }
             }
-            else if (tokens.get(position).getTokenType() != SEMICOLON) {
+            else if (getToken(tokens, position).getTokenType() != SEMICOLON) {
                 throw new SyntaxError("Syntax error: Unexpected token at position " + position + " " +
-                        tokens.get(position).getTokenType() + " '" + tokens.get(position).getValue() + "'");
+                        getToken(tokens, position).getTokenType() + " '" + getToken(tokens, position).getValue() + "'");
             }
         }
+        return statement;
+    }
+
+    private static UseDatabaseStatement parseUse(List<Token> tokens, int position) {
+        expect("USE", tokens, position);
+        position ++;
+        String databaseName = getToken(tokens, position).getValue();
+        position ++;
+        UseDatabaseStatement statement = new UseDatabaseStatement();
+        statement.setDatabaseName(databaseName);
         return statement;
     }
 
@@ -208,12 +228,12 @@ public class SQLParser {
         // as of now only parsing a single binary expression
         BinaryExpression binaryExpression = new BinaryExpression();
         position ++;
-        binaryExpression.setLeftSide(new StaticValueExpression().withValue(tokens.get(position).getValue()));
+        binaryExpression.setLeftSide(new StaticValueExpression().withValue(getToken(tokens, position).getValue()));
         position ++;
-        binaryExpression.setOperation(Operation.from(tokens.get(position).getValue()));
+        binaryExpression.setOperation(Operation.from(getToken(tokens, position).getValue()));
         position ++;
 
-        binaryExpression.setRightSide(new StaticValueExpression().withValue(tokens.get(position).getValue()));
+        binaryExpression.setRightSide(new StaticValueExpression().withValue(getToken(tokens, position).getValue()));
         position ++;
         return binaryExpression;
     }
@@ -222,8 +242,8 @@ public class SQLParser {
         if (position >= tokens.size()) {
             throw new SyntaxError("Expected " + KEYWORD + " '" + keywordValue + "', found end of statement!");
         }
-        if (tokens.get(position).getTokenType() != KEYWORD || !tokens.get(position).getValue().equalsIgnoreCase(keywordValue)) {
-            throw new SyntaxError("Syntax error: Expected " + KEYWORD + " '" + keywordValue + "', found " + tokens.get(position).getTokenType() + " '" + tokens.get(position).getValue() + "' instead at position " + position);
+        if (getToken(tokens, position).getTokenType() != KEYWORD || !getToken(tokens, position).getValue().equalsIgnoreCase(keywordValue)) {
+            throw new SyntaxError("Syntax error: Expected " + KEYWORD + " '" + keywordValue + "', found " + getToken(tokens, position).getTokenType() + " '" + getToken(tokens, position).getValue() + "' instead at position " + position);
         }
     }
 
@@ -233,11 +253,11 @@ public class SQLParser {
         }
         List<String> values = new ArrayList<>();
         do {
-            String value = tokens.get(position).getValue();
+            String value = getToken(tokens, position).getValue();
             values.add(value);
             position++;
 
-            if (position < tokens.size() && tokens.get(position).getTokenType() == TokenType.COMMA) {
+            if (position < tokens.size() && getToken(tokens, position).getTokenType() == TokenType.COMMA) {
                 position++;
             } else {
                 break;

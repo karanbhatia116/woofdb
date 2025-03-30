@@ -7,7 +7,7 @@
 
 - [X] Implement SQL tokenizer
 - [X] Implement SQL parser
-- [ ] Remove hardcoded users table
+- [X] Remove hardcoded users table
 - [ ] Move table persistence to a Page based technique to store and retrieve data instead of loading everything in memory
 - [ ] Implement B-Trees for table persistence
 - [ ] Implement logic for indexes

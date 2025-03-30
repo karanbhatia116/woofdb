@@ -39,6 +39,10 @@ jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
+clean {
+    delete './db/'
+}
+
 test {
     useJUnitPlatform()
 }
