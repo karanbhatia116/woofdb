@@ -1,5 +1,6 @@
 package org.woofdb.core.tokenizer;
 
+import org.woofdb.core.exceptions.SyntaxError;
 import org.woofdb.core.models.Token;
 import org.woofdb.core.models.TokenType;
 
@@ -127,7 +128,9 @@ public class SqlTokenizer implements Tokenizer {
                 continue;
             }
 
-            position ++; // skip unrecognized character
+            else {
+                throw new SyntaxError("Invalid character " + currentChar + " at position " + position);
+            }
         }
 
         return tokens;
