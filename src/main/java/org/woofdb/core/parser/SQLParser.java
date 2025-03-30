@@ -6,18 +6,14 @@ import org.woofdb.core.models.expression.BinaryExpression;
 import org.woofdb.core.models.expression.Operation;
 import org.woofdb.core.models.expression.StaticValueExpression;
 import org.woofdb.core.models.statements.*;
-import org.woofdb.core.tokenizer.SqlTokenizer;
 import org.woofdb.core.tokenizer.Tokenizer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
-import static org.woofdb.core.models.TokenType.KEYWORD;
-import static org.woofdb.core.models.TokenType.SEMICOLON;
+import static org.woofdb.core.models.TokenType.*;
 
 public class SQLParser {
-    private Tokenizer tokenizer;
+    private final Tokenizer tokenizer;
 
     public SQLParser(final Tokenizer tokenizer) {
         this.tokenizer = tokenizer;
@@ -163,23 +159,38 @@ public class SQLParser {
         return statement;
     }
 
-    private static SelectStatement parseUpdate(List<Token> tokens, int position) {
-        SelectStatement statement = new SelectStatement();
-        expect("SELECT", tokens, position);
+    private static UpdateStatement parseUpdate(List<Token> tokens, int position) {
+        UpdateStatement statement = new UpdateStatement();
+        expect("UPDATE", tokens, position);
         position ++;
-        List<String> columns = getExpandedValues(tokens, position);
+        String tableName = tokens.get(position).getValue();
+        statement.setTableName(tableName);
+        position ++;
+        expect("SET", tokens, position);
+        position ++;
+        Map<String, String> updates = new HashMap<>();
+        do {
+            String columnName = tokens.get(position).getValue();
+            position += 2; // skip '='
+            if (position  >= tokens.size()) {
+                throw new SyntaxError("Expected literal value but encountered end of statement at position " + position);
+            }
+            String literal = tokens.get(position).getValue();
+            position ++;
+            updates.put(columnName, literal);
+            if (position < tokens.size() && tokens.get(position).getTokenType() == COMMA) {
+                position ++;
+            } else {
+                break;
+            }
+        } while (position < tokens.size());
 
-        statement.setColumns(columns);
-        expect("FROM", tokens, position);
-        position ++;
-        statement.setFrom(tokens.get(position).getValue());
-        position ++;
-
+        statement.setUpdates(updates);
         // parse where clause
         if (position < tokens.size()) {
             if (tokens.get(position).getTokenType() == KEYWORD) {
                 if (tokens.get(position).getValue().equalsIgnoreCase("WHERE") ) {
-                    statement.setWhere(parseWhere(tokens, position));
+                    statement.setCondition(parseWhere(tokens, position));
                 }
                 else {
                     throw new SyntaxError("Syntax error: Unexpected keyword " + tokens.get(position).getValue() + " at position " + position + " after table name");
@@ -190,7 +201,6 @@ public class SQLParser {
                         tokens.get(position).getTokenType() + " '" + tokens.get(position).getValue() + "'");
             }
         }
-
         return statement;
     }
 
