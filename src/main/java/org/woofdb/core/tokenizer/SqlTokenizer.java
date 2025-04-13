@@ -5,36 +5,38 @@ import org.woofdb.core.models.Token;
 import org.woofdb.core.models.TokenType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public final class SqlTokenizer implements Tokenizer {
 
-    public static List<String> SUPPORTED_KEYWORDS = List.of(
-            "SHOW",
-            "DESCRIBE",
-            "USE",
-            "SELECT",
-            "FROM",
-            "WHERE",
+    public static Set<String> SUPPORTED_KEYWORDS = Set.of(
             "AND",
-            "OR",
-            "INSERT",
-            "INTO",
-            "VALUES",
             "CREATE",
-            "TABLE",
-            "ON",
-            "LIKE",
-            "LIMIT",
-            "SET",
-            "UPDATE",
-            "EXPLAIN",
-            "PRIMARY",
             "DATABASE",
             "DATABASES",
-            "TABLES",
+            "DESCRIBE",
             "DROP",
-            "INDEX"
+            "EXPLAIN",
+            "FROM",
+            "INDEX",
+            "INSERT",
+            "INTO",
+            "LIKE",
+            "LIMIT",
+            "ON",
+            "OR",
+            "PRIMARY",
+            "SELECT",
+            "SET",
+            "SHOW",
+            "TABLE",
+            "TABLES",
+            "UPDATE",
+            "USE",
+            "VALUES",
+            "WHERE"
     );
 
     public static boolean isKeyword(String word) {
@@ -43,6 +45,10 @@ public final class SqlTokenizer implements Tokenizer {
 
     @Override
     public List<Token> getTokens(final String sql) {
+
+        if (sql == null || sql.isBlank())
+            return Collections.emptyList();
+
         final List<Token> tokens = new ArrayList<>();
         int position = 0;
 
@@ -138,7 +144,6 @@ public final class SqlTokenizer implements Tokenizer {
 
             if (currentChar == '(' || currentChar == ')') {
                 position ++;
-                continue;
             }
 
             else {
